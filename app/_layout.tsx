@@ -11,7 +11,6 @@ import {
   AppearanceProvider,
   useAppearance,
 } from "@/context/appearance-context";
-import { ShareIntentProvider } from "@/context/share-intent-context";
 import { SyncProvider } from "@/context/sync-context";
 
 function RootLayoutInner() {
@@ -38,9 +37,7 @@ export default function RootLayout() {
   return (
     <AppearanceProvider>
       <SyncProvider>
-        <ShareIntentProvider>
-          <RootLayoutInner />
-        </ShareIntentProvider>
+        <RootLayoutInner />
       </SyncProvider>
     </AppearanceProvider>
   );

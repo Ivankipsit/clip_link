@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
-import ReceiveSharingIntent from "react-native-receive-sharing-intent";
+
+// Note: react-native-receive-sharing-intent doesn't work with Expo managed workflow
+// This is a placeholder for when we implement proper Expo sharing
+// import ReceiveSharingIntent from "react-native-receive-sharing-intent";
 
 export type SharedItem = {
   text: string;
@@ -24,35 +27,23 @@ export function useShareIntent() {
   }, []);
 
   useEffect(() => {
-    // Get shared intent when app opens from share sheet
-    ReceiveSharingIntent.getReceivedFiles(
-      (files: any[]) => processFiles(files),
-      (error: any) => console.log("Share intent error:", error),
-    );
+    // Share intent functionality is disabled in Expo managed workflow
+    // TODO: Implement using Expo's sharing APIs when available
+    console.log("Share intent not available in Expo managed workflow");
 
-    // Listen for app state changes to catch shares while app is backgrounded
+    // Listen for app state changes (placeholder)
     const subscription = AppState.addEventListener("change", (nextState) => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextState === "active"
-      ) {
-        ReceiveSharingIntent.getReceivedFiles(
-          (files: any[]) => processFiles(files),
-          (error: any) => console.log("Share intent error:", error),
-        );
-      }
       appState.current = nextState;
     });
 
     return () => {
       subscription.remove();
-      ReceiveSharingIntent.clearReceivedFiles();
     };
   }, [processFiles]);
 
   const clearSharedItem = useCallback(() => {
     setSharedItem(null);
-    ReceiveSharingIntent.clearReceivedFiles();
+    // ReceiveSharingIntent.clearReceivedFiles(); // Disabled for Expo
   }, []);
 
   return { sharedItem, clearSharedItem };

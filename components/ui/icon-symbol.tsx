@@ -29,6 +29,9 @@ const MAPPING = {
   "wifi.slash": "wifi-off",
   "checkmark.circle.fill": "check-circle",
   "arrow.clockwise": "refresh",
+  "pencil.circle.fill": "edit",
+  folder: "folder",
+  "folder.fill": "folder",
 } as IconMapping;
 
 export function IconSymbol({

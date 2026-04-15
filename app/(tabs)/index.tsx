@@ -1,6 +1,6 @@
 import * as Clipboard from "expo-clipboard";
-import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -11,45 +11,63 @@ import {
   TextInput,
   View,
 } from "react-native";
-
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useAppearance } from "@/context/appearance-context";
-import { useSharedLink } from "@/context/share-intent-context";
 import { useSync } from "@/context/sync-context";
-import { Link, deleteLink, getLinks, saveLink } from "@/store/links-store";
+import { Category, getCategories } from "@/store/categories-store";
+import {
+  Link,
+  deleteLink,
+  getLinks,
+  saveLink,
+  updateLink,
+} from "@/store/links-store";
 
 export default function LinksScreen() {
+  const router = useRouter();
+
   const { resolvedTheme } = useAppearance();
   const { isOnline, syncEnabled } = useSync();
-  const { sharedItem, clearSharedItem } = useSharedLink();
   const colors = Colors[resolvedTheme];
+
   const [links, setLinks] = useState<Link[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+
   const [modalVisible, setModalVisible] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
 
+  const [urlError, setUrlError] = useState("");
+
+  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
+  const [showSubCategorySuggestions, setShowSubCategorySuggestions] =
+    useState(false);
+
+  const selectedCategoryObj = categories.find((c) => c.name === category);
+  const subCategories = selectedCategoryObj?.subCategories || [];
+
+  const isValidUrl = (urlString: string): boolean => {
+    try {
+      new URL(urlString.includes("://") ? urlString : `https://${urlString}`);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       getLinks().then(setLinks);
+      getCategories().then(setCategories);
     }, []),
   );
-
-  // Auto-open add modal when a URL is shared into the app
-  useEffect(() => {
-    if (sharedItem) {
-      const sharedUrl = sharedItem.weblink || sharedItem.text || "";
-      if (sharedUrl) {
-        setUrl(sharedUrl);
-        setModalVisible(true);
-        clearSharedItem();
-      }
-    }
-  }, [sharedItem, clearSharedItem]);
 
   const handlePaste = async () => {
     const text = await Clipboard.getStringAsync();
@@ -57,19 +75,49 @@ export default function LinksScreen() {
   };
 
   const handleAdd = async () => {
-    if (!url.trim()) return;
-    await saveLink({
-      url: url.trim(),
-      title: title.trim() || url.trim(),
-      category: category.trim(),
-      subCategory: subCategory.trim(),
-    });
+    if (!isValidUrl(url)) {
+      setUrlError("Please enter a valid URL");
+      return;
+    }
+
+    if (editingId) {
+      await updateLink(editingId, {
+        url: url.trim(),
+        title: title.trim() || url.trim(),
+        category: category.trim(),
+        subCategory: subCategory.trim(),
+        synced: false,
+      });
+    } else {
+      await saveLink({
+        url: url.trim(),
+        title: title.trim() || url.trim(),
+        category: category.trim(),
+        subCategory: subCategory.trim(),
+      });
+    }
+
+    resetForm();
+    getLinks().then(setLinks);
+  };
+
+  const resetForm = () => {
     setUrl("");
     setTitle("");
     setCategory("");
     setSubCategory("");
+    setEditingId(null);
+    setUrlError("");
     setModalVisible(false);
-    getLinks().then(setLinks);
+  };
+
+  const handleEdit = (link: Link) => {
+    setEditingId(link.id);
+    setUrl(link.url);
+    setTitle(link.title);
+    setCategory(link.category);
+    setSubCategory(link.subCategory);
+    setModalVisible(true);
   };
 
   const handleDelete = (id: string) => {
@@ -86,6 +134,10 @@ export default function LinksScreen() {
     ]);
   };
 
+  const closeModal = () => {
+    setModalVisible(false);
+  };
+
   return (
     <ThemedView style={styles.container}>
       {!isOnline && (
@@ -96,6 +148,7 @@ export default function LinksScreen() {
           <ThemedText style={styles.statusText}>Offline</ThemedText>
         </View>
       )}
+
       <FlatList
         data={links}
         keyExtractor={(item) => item.id}
@@ -116,16 +169,13 @@ export default function LinksScreen() {
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
             onPress={() => Linking.openURL(item.url)}
-            onLongPress={() => handleDelete(item.id)}
           >
             <View style={styles.cardContent}>
               <View style={styles.cardTitleRow}>
-                <ThemedText
-                  numberOfLines={1}
-                  style={[styles.cardTitle, { flex: 1 }]}
-                >
+                <ThemedText numberOfLines={1} style={styles.cardTitle}>
                   {item.title}
                 </ThemedText>
+
                 {syncEnabled && (
                   <View
                     style={[
@@ -138,43 +188,43 @@ export default function LinksScreen() {
                     ]}
                   />
                 )}
+
+                <Pressable onPress={() => handleEdit(item)}>
+                  <IconSymbol
+                    name="pencil.circle.fill"
+                    size={20}
+                    color={colors.accent}
+                  />
+                </Pressable>
+
+                <Pressable onPress={() => handleDelete(item.id)}>
+                  <IconSymbol name="trash" size={20} color="#ff4444" />
+                </Pressable>
               </View>
-              <ThemedText
-                numberOfLines={1}
-                style={{ color: colors.textSecondary, fontSize: 13 }}
-              >
+
+              <ThemedText numberOfLines={1} style={{ fontSize: 13 }}>
                 {item.url}
               </ThemedText>
+
               {(item.category || item.subCategory) && (
                 <View style={styles.tags}>
-                  {item.category ? (
+                  {item.category && (
+                    <View style={styles.tag}>
+                      <ThemedText>{item.category}</ThemedText>
+                    </View>
+                  )}
+                  {item.subCategory && (
                     <View
                       style={[
                         styles.tag,
-                        { backgroundColor: colors.surfaceSecondary },
+                        {
+                          backgroundColor: colors.surfaceSecondary,
+                        },
                       ]}
                     >
-                      <ThemedText
-                        style={{ fontSize: 12, color: colors.textSecondary }}
-                      >
-                        {item.category}
-                      </ThemedText>
+                      <ThemedText>{item.subCategory}</ThemedText>
                     </View>
-                  ) : null}
-                  {item.subCategory ? (
-                    <View
-                      style={[
-                        styles.tag,
-                        { backgroundColor: colors.surfaceSecondary },
-                      ]}
-                    >
-                      <ThemedText
-                        style={{ fontSize: 12, color: colors.textSecondary }}
-                      >
-                        {item.subCategory}
-                      </ThemedText>
-                    </View>
-                  ) : null}
+                  )}
                 </View>
               )}
             </View>
@@ -182,6 +232,7 @@ export default function LinksScreen() {
         )}
       />
 
+      {/* FAB */}
       <Pressable
         style={[styles.fab, { backgroundColor: colors.accent }]}
         onPress={() => setModalVisible(true)}
@@ -189,44 +240,45 @@ export default function LinksScreen() {
         <IconSymbol name="plus" size={28} color="#fff" />
       </Pressable>
 
+      {/* MODAL */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={closeModal} />
+
           <View
             style={[styles.modalContent, { backgroundColor: colors.surface }]}
           >
-            <View style={styles.modalHeader}>
-              <ThemedText type="subtitle">Add Link</ThemedText>
-              <Pressable onPress={() => setModalVisible(false)}>
-                <IconSymbol name="xmark" size={22} color={colors.icon} />
-              </Pressable>
-            </View>
+            <ThemedText type="subtitle">
+              {editingId ? "Edit Link" : "Add Link"}
+            </ThemedText>
 
+            {/* URL */}
             <View style={styles.urlRow}>
               <TextInput
                 style={[
                   styles.input,
-                  styles.urlInput,
                   {
                     color: colors.text,
                     borderColor: colors.border,
                     backgroundColor: colors.surfaceSecondary,
                   },
                 ]}
-                placeholder="URL"
                 placeholderTextColor={colors.placeholder}
+                placeholder="URL"
                 value={url}
-                onChangeText={setUrl}
-                autoCapitalize="none"
-                keyboardType="url"
+                onChangeText={(t) => {
+                  setUrl(t);
+                  setUrlError("");
+                }}
               />
-              <Pressable
-                style={[styles.pasteBtn, { backgroundColor: colors.accent }]}
-                onPress={handlePaste}
-              >
+              <Pressable style={styles.pasteBtn} onPress={handlePaste}>
                 <IconSymbol name="doc.on.clipboard" size={18} color="#fff" />
               </Pressable>
             </View>
 
+            {urlError && <ThemedText>{urlError}</ThemedText>}
+
+            {/* TITLE */}
             <TextInput
               style={[
                 styles.input,
@@ -236,11 +288,13 @@ export default function LinksScreen() {
                   backgroundColor: colors.surfaceSecondary,
                 },
               ]}
-              placeholder="Title (optional)"
               placeholderTextColor={colors.placeholder}
+              placeholder="Title"
               value={title}
               onChangeText={setTitle}
             />
+
+            {/* CATEGORY */}
             <TextInput
               style={[
                 styles.input,
@@ -250,35 +304,130 @@ export default function LinksScreen() {
                   backgroundColor: colors.surfaceSecondary,
                 },
               ]}
+              placeholderTextColor={colors.placeholder}
               placeholder="Category"
-              placeholderTextColor={colors.placeholder}
               value={category}
-              onChangeText={setCategory}
-            />
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  color: colors.text,
-                  borderColor: colors.border,
-                  backgroundColor: colors.surfaceSecondary,
-                },
-              ]}
-              placeholder="Sub-category"
-              placeholderTextColor={colors.placeholder}
-              value={subCategory}
-              onChangeText={setSubCategory}
+              onChangeText={(t) => {
+                setCategory(t);
+                setSubCategory("");
+                setShowCategorySuggestions(true);
+              }}
             />
 
-            <Pressable
-              style={[styles.addBtn, { backgroundColor: colors.accent }]}
-              onPress={handleAdd}
-            >
-              <ThemedText
-                style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}
+            {showCategorySuggestions && category.length > 0 && (
+              <View
+                style={[
+                  styles.suggestions,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: colors.surface,
+                  },
+                ]}
               >
-                Save
-              </ThemedText>
+                {categories.filter((c) =>
+                  c.name.toLowerCase().includes(category.toLowerCase()),
+                ).length > 0 ? (
+                  categories
+                    .filter((c) =>
+                      c.name.toLowerCase().includes(category.toLowerCase()),
+                    )
+                    .map((c) => (
+                      <Pressable
+                        key={c.id}
+                        style={styles.suggestionItem}
+                        onPress={() => {
+                          setCategory(c.name);
+                          setShowCategorySuggestions(false);
+                        }}
+                      >
+                        <ThemedText>{c.name}</ThemedText>
+                      </Pressable>
+                    ))
+                ) : (
+                  <Pressable
+                    style={styles.suggestionItem}
+                    onPress={() => router.push("/categories")}
+                  >
+                    <ThemedText>No results. Add →</ThemedText>
+                  </Pressable>
+                )}
+              </View>
+            )}
+
+            {/* SUBCATEGORY */}
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  color: colors.text,
+                  borderColor: colors.border,
+                  backgroundColor: colors.surfaceSecondary,
+                },
+              ]}
+              placeholderTextColor={colors.placeholder}
+              placeholder="Sub-category"
+              value={subCategory}
+              editable={!!category}
+              onChangeText={(t) => {
+                setSubCategory(t);
+                setShowSubCategorySuggestions(true);
+              }}
+            />
+
+            {showSubCategorySuggestions && subCategory.length > 0 && (
+              <View
+                style={[
+                  styles.suggestions,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: colors.surface,
+                  },
+                ]}
+              >
+                {subCategories.filter((s) =>
+                  s.name.toLowerCase().includes(subCategory.toLowerCase()),
+                ).length > 0 ? (
+                  subCategories
+                    .filter((s) =>
+                      s.name.toLowerCase().includes(subCategory.toLowerCase()),
+                    )
+                    .map((s) => (
+                      <Pressable
+                        key={s.id}
+                        style={styles.suggestionItem}
+                        onPress={() => {
+                          setSubCategory(s.name);
+                          setShowSubCategorySuggestions(false);
+                        }}
+                      >
+                        <ThemedText>{s.name}</ThemedText>
+                      </Pressable>
+                    ))
+                ) : (
+                  <Pressable
+                    style={styles.suggestionItem}
+                    onPress={() => router.push("/categories")}
+                  >
+                    <ThemedText>No results. Add →</ThemedText>
+                  </Pressable>
+                )}
+              </View>
+            )}
+
+            {/* SAVE */}
+            <Pressable
+              style={[
+                styles.addBtn,
+                {
+                  backgroundColor: isValidUrl(url)
+                    ? colors.accent
+                    : colors.border,
+                },
+              ]}
+              onPress={handleAdd}
+              disabled={!isValidUrl(url)}
+            >
+              <ThemedText style={{ color: "#fff" }}>Save</ThemedText>
             </Pressable>
           </View>
         </View>
@@ -332,10 +481,10 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 24,
-    gap: 14,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    gap: 12,
   },
   modalHeader: {
     flexDirection: "row",
@@ -344,12 +493,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   urlRow: { flexDirection: "row", gap: 8 },
-  input: {
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 15,
-  },
+  input: { borderWidth: 1, borderRadius: 10, padding: 12, fontSize: 15 },
   urlInput: { flex: 1 },
   pasteBtn: {
     width: 44,
@@ -357,10 +501,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  addBtn: {
-    borderRadius: 10,
-    padding: 14,
-    alignItems: "center",
-    marginTop: 4,
+  addBtn: { borderRadius: 10, padding: 14, alignItems: "center", marginTop: 4 },
+  iconButton: { padding: 6 },
+  dropdown: {
+    marginTop: "auto",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
   },
+  dropdownItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+  },
+  suggestions: {
+    borderWidth: 1,
+    borderRadius: 8,
+    marginTop: 4,
+    maxHeight: 150,
+    overflow: "hidden",
+  },
+  suggestionItem: { padding: 12, borderBottomWidth: 1 },
 });
