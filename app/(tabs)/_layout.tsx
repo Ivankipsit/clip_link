@@ -28,18 +28,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Links",
+          title: "Browse",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={24} name="link" color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="categories"
-        options={{
-          title: "Categories",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={24} name="folder" color={color} />
+            <IconSymbol size={24} name="folder.fill" color={color} />
           ),
         }}
       />

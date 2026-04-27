@@ -16,6 +16,8 @@ const MAPPING = {
   "paperplane.fill": "send",
   "chevron.left.forwardslash.chevron.right": "code",
   "chevron.right": "chevron-right",
+  "chevron.left": "chevron-left",
+  "chevron.down": "expand-more",
   link: "link",
   magnifyingglass: "search",
   "gearshape.fill": "settings",
@@ -32,6 +34,14 @@ const MAPPING = {
   "pencil.circle.fill": "edit",
   folder: "folder",
   "folder.fill": "folder",
+  "list.bullet": "view-list",
+  "square.grid.2x2": "grid-view",
+  "arrow.up.arrow.down": "swap-vert",
+  "arrow.up": "arrow-upward",
+  "arrow.down": "arrow-downward",
+  "textformat.abc": "sort-by-alpha",
+  safari: "open-in-new",
+  "doc.on.doc": "content-copy",
 } as IconMapping;
 
 export function IconSymbol({

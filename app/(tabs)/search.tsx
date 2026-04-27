@@ -1,13 +1,14 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
-    FlatList,
-    Linking,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    View,
+  Clipboard,
+  FlatList,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
 } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
@@ -15,32 +16,38 @@ import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useAppearance } from "@/context/appearance-context";
+import { getAllCategoryPaths, getCategories } from "@/store/categories-store";
 import { Link, getLinks } from "@/store/links-store";
 
 export default function SearchScreen() {
   const { resolvedTheme } = useAppearance();
   const colors = Colors[resolvedTheme];
   const [links, setLinks] = useState<Link[]>([]);
+  const [validCategoryPaths, setValidCategoryPaths] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedSubCategories, setSelectedSubCategories] = useState<string[]>(
-    [],
-  );
 
   useFocusEffect(
     useCallback(() => {
       getLinks().then(setLinks);
+      getCategories().then((cats) => {
+        const paths = getAllCategoryPaths(cats).map((p) => p.path);
+        setValidCategoryPaths(paths);
+      });
     }, []),
   );
 
-  const categories = useMemo(
-    () => [...new Set(links.map((l) => l.category).filter(Boolean))],
-    [links],
-  );
-
-  const subCategories = useMemo(
-    () => [...new Set(links.map((l) => l.subCategory).filter(Boolean))],
-    [links],
+  // Only show categories that still exist
+  const categoryPaths = useMemo(
+    () =>
+      validCategoryPaths.filter((p) =>
+        links.some(
+          (l) =>
+            l.categoryPath === p ||
+            (l.categoryPath && l.categoryPath.startsWith(p + " > ")),
+        ),
+      ),
+    [links, validCategoryPaths],
   );
 
   const toggleCategory = (cat: string) => {
@@ -49,28 +56,20 @@ export default function SearchScreen() {
     );
   };
 
-  const toggleSubCategory = (sub: string) => {
-    setSelectedSubCategories((prev) =>
-      prev.includes(sub) ? prev.filter((s) => s !== sub) : [...prev, sub],
-    );
-  };
-
   const clearSearch = () => {
     setQuery("");
     setSelectedCategories([]);
-    setSelectedSubCategories([]);
   };
 
   const filteredLinks = useMemo(() => {
     let result = links;
 
     if (selectedCategories.length > 0) {
-      result = result.filter((l) => selectedCategories.includes(l.category));
-    }
-
-    if (selectedSubCategories.length > 0) {
       result = result.filter((l) =>
-        selectedSubCategories.includes(l.subCategory),
+        selectedCategories.some(
+          (cat) =>
+            l.categoryPath === cat || l.categoryPath.startsWith(cat + " > "),
+        ),
       );
     }
 
@@ -80,18 +79,14 @@ export default function SearchScreen() {
         (l) =>
           l.title.toLowerCase().includes(q) ||
           l.url.toLowerCase().includes(q) ||
-          l.category.toLowerCase().includes(q) ||
-          l.subCategory.toLowerCase().includes(q),
+          l.categoryPath.toLowerCase().includes(q),
       );
     }
 
     return result;
-  }, [links, query, selectedCategories, selectedSubCategories]);
+  }, [links, query, selectedCategories]);
 
-  const hasFilters =
-    query.trim() ||
-    selectedCategories.length > 0 ||
-    selectedSubCategories.length > 0;
+  const hasFilters = query.trim() || selectedCategories.length > 0;
 
   return (
     <ThemedView style={styles.container}>
@@ -125,7 +120,7 @@ export default function SearchScreen() {
         </View>
       </View>
 
-      {categories.length > 0 && (
+      {categoryPaths.length > 0 && (
         <View style={styles.filterSection}>
           <ThemedText
             style={[styles.filterLabel, { color: colors.textSecondary }]}
@@ -137,7 +132,7 @@ export default function SearchScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chips}
           >
-            {categories.map((cat) => {
+            {categoryPaths.map((cat) => {
               const selected = selectedCategories.includes(cat);
               return (
                 <Pressable
@@ -168,49 +163,6 @@ export default function SearchScreen() {
         </View>
       )}
 
-      {subCategories.length > 0 && (
-        <View style={styles.filterSection}>
-          <ThemedText
-            style={[styles.filterLabel, { color: colors.textSecondary }]}
-          >
-            Sub-categories
-          </ThemedText>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chips}
-          >
-            {subCategories.map((sub) => {
-              const selected = selectedSubCategories.includes(sub);
-              return (
-                <Pressable
-                  key={sub}
-                  onPress={() => toggleSubCategory(sub)}
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor: selected
-                        ? colors.accent
-                        : colors.surfaceSecondary,
-                      borderColor: selected ? colors.accent : colors.border,
-                    },
-                  ]}
-                >
-                  <ThemedText
-                    style={{
-                      fontSize: 13,
-                      color: selected ? "#fff" : colors.text,
-                    }}
-                  >
-                    {sub}
-                  </ThemedText>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-      )}
-
       <FlatList
         data={filteredLinks}
         keyExtractor={(item) => item.id}
@@ -225,23 +177,52 @@ export default function SearchScreen() {
           </ThemedText>
         }
         renderItem={({ item }) => (
-          <Pressable
+          <View
             style={[
               styles.card,
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
-            onPress={() => Linking.openURL(item.url)}
           >
-            <ThemedText numberOfLines={1} style={{ fontWeight: "600" }}>
-              {item.title}
-            </ThemedText>
-            <ThemedText
-              numberOfLines={1}
-              style={{ color: colors.textSecondary, fontSize: 13 }}
-            >
-              {item.url}
-            </ThemedText>
-          </Pressable>
+            <View style={styles.cardBody}>
+              <View style={styles.cardInfo}>
+                <ThemedText numberOfLines={1} style={styles.cardTitle}>
+                  {item.title}
+                </ThemedText>
+                <ThemedText
+                  numberOfLines={1}
+                  style={{ color: colors.textSecondary, fontSize: 12 }}
+                >
+                  {item.categoryPath || "Uncategorized"}
+                </ThemedText>
+                <ThemedText
+                  numberOfLines={1}
+                  style={{ color: colors.accent, fontSize: 13 }}
+                >
+                  {item.url}
+                </ThemedText>
+              </View>
+              <View style={styles.cardActions}>
+                <Pressable
+                  onPress={() => Linking.openURL(item.url)}
+                  hitSlop={8}
+                  style={styles.cardActionBtn}
+                >
+                  <IconSymbol name="safari" size={20} color={colors.accent} />
+                </Pressable>
+                <Pressable
+                  onPress={() => Clipboard.setString(item.url)}
+                  hitSlop={8}
+                  style={styles.cardActionBtn}
+                >
+                  <IconSymbol
+                    name="doc.on.doc"
+                    size={20}
+                    color={colors.accent}
+                  />
+                </Pressable>
+              </View>
+            </View>
+          </View>
         )}
       />
     </ThemedView>
@@ -276,5 +257,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 32,
   },
-  card: { borderRadius: 12, borderWidth: 1, padding: 14, gap: 4 },
+  card: { borderRadius: 12, borderWidth: 1, padding: 14 },
+  cardBody: { flexDirection: "row", alignItems: "center", gap: 12 },
+  cardInfo: { flex: 1, gap: 2 },
+  cardTitle: { fontWeight: "600", fontSize: 15 },
+  cardActions: { flexDirection: "row", gap: 8 },
+  cardActionBtn: { padding: 6 },
 });

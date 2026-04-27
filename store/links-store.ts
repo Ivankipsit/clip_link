@@ -1,14 +1,15 @@
 import { supabase } from "@/lib/supabase";
+import { addLog } from "@/store/logs-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Crypto from "expo-crypto";
 
 export const generateId = () => Crypto.randomUUID();
+
 export type Link = {
   id: string;
   url: string;
   title: string;
-  category: string;
-  subCategory: string;
+  categoryPath: string;
   createdAt: number;
   synced: boolean;
 };
@@ -30,7 +31,12 @@ async function getLocalLinks(): Promise<Link[]> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    // Normalize old links that may lack categoryPath
+    return parsed.map((l: any) => ({
+      ...l,
+      categoryPath: l.categoryPath ?? l.category ?? "",
+    }));
   } catch {
     return [];
   }
@@ -60,8 +66,7 @@ export async function getLinks(): Promise<Link[]> {
       id: l.id,
       url: l.url,
       title: l.title,
-      category: l.category || "",
-      subCategory: l.sub_category || "",
+      categoryPath: l.category_path || "",
       createdAt: l.created_at,
       synced: true,
     }));
@@ -97,8 +102,7 @@ export async function saveLink(
           id,
           url: link.url,
           title: link.title,
-          category: link.category,
-          sub_category: link.subCategory,
+          category_path: link.categoryPath,
           created_at: createdAt,
           updated_at: createdAt,
         },
@@ -108,6 +112,7 @@ export async function saveLink(
     }
   }
 
+  await addLog("Link Added", newLink.title || newLink.url);
   return newLink;
 }
 
@@ -125,9 +130,8 @@ export async function updateLink(
 
   if (updates.url !== undefined) payload.url = updates.url;
   if (updates.title !== undefined) payload.title = updates.title;
-  if (updates.category !== undefined) payload.category = updates.category;
-  if (updates.subCategory !== undefined)
-    payload.sub_category = updates.subCategory;
+  if (updates.categoryPath !== undefined)
+    payload.category_path = updates.categoryPath;
 
   if (isSupabaseConfigured()) {
     try {
@@ -143,6 +147,7 @@ export async function updateLink(
   );
 
   await setLocalLinks(updated);
+  await addLog("Link Updated", updates.title || updates.url || id);
 }
 
 // -----------------------------
@@ -159,7 +164,9 @@ export async function deleteLink(id: string) {
   }
 
   const local = await getLocalLinks();
+  const deleted = local.find((l) => l.id === id);
   await setLocalLinks(local.filter((l) => l.id !== id));
+  await addLog("Link Deleted", deleted?.title || id);
 }
 
 // -----------------------------
@@ -183,24 +190,45 @@ export async function getUnsyncedLinks(): Promise<Link[]> {
 // Filters
 // -----------------------------
 
-export async function getLinksByCategory(category: string): Promise<Link[]> {
-  const links = await getLinks();
-  return links.filter((l) => l.category === category);
-}
-
-export async function getLinksBySubCategory(
-  subCategory: string,
-): Promise<Link[]> {
-  const links = await getLinks();
-  return links.filter((l) => l.subCategory === subCategory);
-}
-
-export async function countLinksByCategory(category: string): Promise<number> {
-  return (await getLinksByCategory(category)).length;
-}
-
-export async function countLinksBySubCategory(
-  subCategory: string,
+export async function countLinksByCategoryPath(
+  categoryPath: string,
 ): Promise<number> {
-  return (await getLinksBySubCategory(subCategory)).length;
+  const links = await getLinks();
+  return links.filter(
+    (l) =>
+      l.categoryPath === categoryPath ||
+      (l.categoryPath && l.categoryPath.startsWith(categoryPath + " > ")),
+  ).length;
+}
+
+export async function clearCategoryPathFromLinks(
+  categoryPath: string,
+): Promise<void> {
+  const local = await getLocalLinks();
+  const updated = local.map((l) =>
+    l.categoryPath === categoryPath ||
+    (l.categoryPath && l.categoryPath.startsWith(categoryPath + " > "))
+      ? { ...l, categoryPath: "", synced: false }
+      : l,
+  );
+  await setLocalLinks(updated);
+}
+
+export async function deleteLinksByCategoryPath(
+  categoryPath: string,
+): Promise<void> {
+  const local = await getLocalLinks();
+  await setLocalLinks(
+    local.filter(
+      (l) =>
+        l.categoryPath !== categoryPath &&
+        !(l.categoryPath && l.categoryPath.startsWith(categoryPath + " > ")),
+    ),
+  );
+}
+
+export async function deleteAllLinks(): Promise<void> {
+  const count = (await getLocalLinks()).length;
+  await setLocalLinks([]);
+  await addLog("All Links Deleted", `${count} links removed`);
 }
