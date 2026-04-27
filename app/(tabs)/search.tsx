@@ -14,7 +14,7 @@ import {
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Colors } from "@/constants/theme";
+import { Colors, Typography, createThemedStyles } from "@/constants/theme";
 import { useAppearance } from "@/context/appearance-context";
 import { getAllCategoryPaths, getCategories } from "@/store/categories-store";
 import { Link, getLinks } from "@/store/links-store";
@@ -22,6 +22,7 @@ import { Link, getLinks } from "@/store/links-store";
 export default function SearchScreen() {
   const { resolvedTheme } = useAppearance();
   const colors = Colors[resolvedTheme];
+  const themed = createThemedStyles(colors);
   const [links, setLinks] = useState<Link[]>([]);
   const [validCategoryPaths, setValidCategoryPaths] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -149,10 +150,10 @@ export default function SearchScreen() {
                   ]}
                 >
                   <ThemedText
-                    style={{
-                      fontSize: 13,
-                      color: selected ? "#fff" : colors.text,
-                    }}
+                    style={[
+                      Typography.captionMedium,
+                      { color: selected ? "#fff" : colors.text },
+                    ]}
                   >
                     {cat}
                   </ThemedText>
@@ -170,19 +171,12 @@ export default function SearchScreen() {
           filteredLinks.length === 0 ? styles.emptyContainer : styles.list
         }
         ListEmptyComponent={
-          <ThemedText
-            style={{ color: colors.textSecondary, textAlign: "center" }}
-          >
+          <ThemedText style={[themed.textSecondary, Typography.textCenter]}>
             {hasFilters ? "No matching links." : "No links yet."}
           </ThemedText>
         }
         renderItem={({ item }) => (
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
+          <View style={[styles.card, themed.cardContainer]}>
             <View style={styles.cardBody}>
               <View style={styles.cardInfo}>
                 <ThemedText numberOfLines={1} style={styles.cardTitle}>
@@ -190,13 +184,13 @@ export default function SearchScreen() {
                 </ThemedText>
                 <ThemedText
                   numberOfLines={1}
-                  style={{ color: colors.textSecondary, fontSize: 12 }}
+                  style={[Typography.caption, themed.textSecondary]}
                 >
                   {item.categoryPath || "Uncategorized"}
                 </ThemedText>
                 <ThemedText
                   numberOfLines={1}
-                  style={{ color: colors.accent, fontSize: 13 }}
+                  style={[Typography.captionMedium, themed.textAccent]}
                 >
                   {item.url}
                 </ThemedText>

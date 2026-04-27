@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { StyleSheet } from "react-native";
 
 // Light: very subtle white and grey
 // Dark: grey with purple accent
@@ -39,28 +39,63 @@ export const Colors = {
   },
 };
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: "system-ui",
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: "ui-serif",
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: "ui-rounded",
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: "ui-monospace",
+export type ThemeColors = (typeof Colors)["light"];
+
+// ── Static typography (no color dependency) ──
+export const Typography = StyleSheet.create({
+  body: { fontSize: 16 },
+  bodySmall: { fontSize: 14 },
+  caption: { fontSize: 12 },
+  captionMedium: { fontSize: 13 },
+  label: { fontSize: 12, fontWeight: "600" },
+  labelMedium: { fontSize: 13, fontWeight: "600" },
+  semibold: { fontSize: 14, fontWeight: "600" },
+  buttonText: { fontWeight: "600", fontSize: 16 },
+  textCenter: { textAlign: "center" },
+});
+
+// ── Dynamic styles that depend on theme colors ──
+export function createThemedStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    // Text colors
+    textSecondary: { color: colors.textSecondary },
+    textAccent: { color: colors.accent },
+    textDestructive: { color: colors.destructive },
+    textWhite: { color: "#fff" },
+
+    // Surfaces
+    cardContainer: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+    inputBase: {
+      color: colors.text,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceSecondary,
+    },
+
+    // Borders
+    separator: { borderTopWidth: 1, borderTopColor: colors.border },
+    separatorBottom: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  });
+}
+
+// ── Shared layout styles (no color dependency) ──
+export const SharedStyles = StyleSheet.create({
+  container: { flex: 1 },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  default: {
-    sans: "normal",
-    serif: "serif",
-    rounded: "normal",
-    mono: "monospace",
+  rowSpaceBetween: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded:
-      "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
   },
 });

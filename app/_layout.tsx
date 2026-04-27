@@ -1,15 +1,15 @@
 import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider,
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import {
-  AppearanceProvider,
-  useAppearance,
+    AppearanceProvider,
+    useAppearance,
 } from "@/context/appearance-context";
 import { SyncProvider } from "@/context/sync-context";
 
@@ -19,10 +19,6 @@ function RootLayoutInner() {
     <ThemeProvider value={resolvedTheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="modal"
-          options={{ presentation: "modal", title: "Modal" }}
-        />
       </Stack>
       <StatusBar style={resolvedTheme === "dark" ? "light" : "dark"} />
     </ThemeProvider>

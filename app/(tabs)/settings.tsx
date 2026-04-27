@@ -11,7 +11,7 @@ import {
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Colors } from "@/constants/theme";
+import { Colors, Typography, createThemedStyles } from "@/constants/theme";
 import { AppearanceMode, useAppearance } from "@/context/appearance-context";
 import { useSync } from "@/context/sync-context";
 import { deleteAllCategories, getCategories } from "@/store/categories-store";
@@ -40,6 +40,7 @@ export default function SettingsScreen() {
     setCategoryViewMode,
   } = useSync();
   const colors = Colors[resolvedTheme];
+  const themed = createThemedStyles(colors);
 
   const [categoryCount, setCategoryCount] = useState(0);
   const [linkCount, setLinkCount] = useState(0);
@@ -57,30 +58,20 @@ export default function SettingsScreen() {
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.section}>
-          <ThemedText
-            style={[styles.sectionTitle, { color: colors.textSecondary }]}
-          >
+          <ThemedText style={[styles.sectionTitle, themed.textSecondary]}>
             Appearance
           </ThemedText>
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
+          <View style={[styles.card, themed.cardContainer]}>
             {MODES.map((m, i) => (
               <Pressable
                 key={m.value}
                 style={[
                   styles.row,
-                  i < MODES.length - 1 && {
-                    borderBottomWidth: 1,
-                    borderBottomColor: colors.border,
-                  },
+                  i < MODES.length - 1 && themed.separatorBottom,
                 ]}
                 onPress={() => setMode(m.value)}
               >
-                <ThemedText style={{ fontSize: 16 }}>{m.label}</ThemedText>
+                <ThemedText style={Typography.body}>{m.label}</ThemedText>
                 {mode === m.value && (
                   <IconSymbol
                     name="checkmark"
@@ -94,23 +85,14 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <ThemedText
-            style={[styles.sectionTitle, { color: colors.textSecondary }]}
-          >
+          <ThemedText style={[styles.sectionTitle, themed.textSecondary]}>
             Data & Sync
           </ThemedText>
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
+          <View style={[styles.card, themed.cardContainer]}>
             <View style={styles.row}>
               <View style={styles.rowLabel}>
-                <ThemedText style={{ fontSize: 16 }}>Enable Sync</ThemedText>
-                <ThemedText
-                  style={{ fontSize: 12, color: colors.textSecondary }}
-                >
+                <ThemedText style={Typography.body}>Enable Sync</ThemedText>
+                <ThemedText style={[Typography.caption, themed.textSecondary]}>
                   Sync bookmarks to the cloud via Supabase
                 </ThemedText>
               </View>
@@ -121,13 +103,8 @@ export default function SettingsScreen() {
                 thumbColor="#fff"
               />
             </View>
-            <View
-              style={[
-                styles.row,
-                { borderTopWidth: 1, borderTopColor: colors.border },
-              ]}
-            >
-              <ThemedText style={{ fontSize: 16 }}>Status</ThemedText>
+            <View style={[styles.row, themed.separator]}>
+              <ThemedText style={Typography.body}>Status</ThemedText>
               <View style={styles.statusRow}>
                 <View
                   style={[
@@ -140,20 +117,15 @@ export default function SettingsScreen() {
                   ]}
                 />
                 <ThemedText
-                  style={{ fontSize: 14, color: colors.textSecondary }}
+                  style={[Typography.bodySmall, themed.textSecondary]}
                 >
                   {isOnline ? "Online" : "Offline"}
                 </ThemedText>
               </View>
             </View>
-            <View
-              style={[
-                styles.row,
-                { borderTopWidth: 1, borderTopColor: colors.border },
-              ]}
-            >
-              <ThemedText style={{ fontSize: 16 }}>Storage</ThemedText>
-              <ThemedText style={{ fontSize: 14, color: colors.textSecondary }}>
+            <View style={[styles.row, themed.separator]}>
+              <ThemedText style={Typography.body}>Storage</ThemedText>
+              <ThemedText style={[Typography.bodySmall, themed.textSecondary]}>
                 {syncEnabled ? "Local + Cloud" : "Local only"}
               </ThemedText>
             </View>
@@ -161,25 +133,16 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <ThemedText
-            style={[styles.sectionTitle, { color: colors.textSecondary }]}
-          >
+          <ThemedText style={[styles.sectionTitle, themed.textSecondary]}>
             Features
           </ThemedText>
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
+          <View style={[styles.card, themed.cardContainer]}>
             <View style={styles.row}>
               <View style={styles.rowLabel}>
-                <ThemedText style={{ fontSize: 16 }}>
+                <ThemedText style={Typography.body}>
                   Smart Categorize
                 </ThemedText>
-                <ThemedText
-                  style={{ fontSize: 12, color: colors.textSecondary }}
-                >
+                <ThemedText style={[Typography.caption, themed.textSecondary]}>
                   Auto-suggest category based on URL
                 </ThemedText>
               </View>
@@ -190,19 +153,12 @@ export default function SettingsScreen() {
                 thumbColor="#fff"
               />
             </View>
-            <View
-              style={[
-                styles.row,
-                { borderTopWidth: 1, borderTopColor: colors.border },
-              ]}
-            >
+            <View style={[styles.row, themed.separator]}>
               <View style={styles.rowLabel}>
-                <ThemedText style={{ fontSize: 16 }}>
+                <ThemedText style={Typography.body}>
                   Delete Links with Category
                 </ThemedText>
-                <ThemedText
-                  style={{ fontSize: 12, color: colors.textSecondary }}
-                >
+                <ThemedText style={[Typography.caption, themed.textSecondary]}>
                   Delete associated links when removing a category
                 </ThemedText>
               </View>
@@ -213,17 +169,10 @@ export default function SettingsScreen() {
                 thumbColor="#fff"
               />
             </View>
-            <View
-              style={[
-                styles.row,
-                { borderTopWidth: 1, borderTopColor: colors.border },
-              ]}
-            >
+            <View style={[styles.row, themed.separator]}>
               <View style={styles.rowLabel}>
-                <ThemedText style={{ fontSize: 16 }}>Category View</ThemedText>
-                <ThemedText
-                  style={{ fontSize: 12, color: colors.textSecondary }}
-                >
+                <ThemedText style={Typography.body}>Category View</ThemedText>
+                <ThemedText style={[Typography.caption, themed.textSecondary]}>
                   Display categories as list or grid
                 </ThemedText>
               </View>
@@ -274,9 +223,7 @@ export default function SettingsScreen() {
         {/* Logs */}
         <View style={styles.section}>
           <View style={styles.logHeader}>
-            <ThemedText
-              style={[styles.sectionTitle, { color: colors.textSecondary }]}
-            >
+            <ThemedText style={[styles.sectionTitle, themed.textSecondary]}>
               Logs
             </ThemedText>
             {logs.length > 0 && (
@@ -295,7 +242,9 @@ export default function SettingsScreen() {
                   }
                 }}
               >
-                <ThemedText style={{ fontSize: 12, color: colors.destructive }}>
+                <ThemedText
+                  style={[Typography.caption, themed.textDestructive]}
+                >
                   Clear
                 </ThemedText>
               </Pressable>
@@ -305,8 +254,7 @@ export default function SettingsScreen() {
             style={[
               styles.card,
               {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
+                ...themed.cardContainer,
                 maxHeight: 300,
               },
             ]}
@@ -314,7 +262,7 @@ export default function SettingsScreen() {
             {logs.length === 0 ? (
               <View style={styles.row}>
                 <ThemedText
-                  style={{ fontSize: 14, color: colors.textSecondary }}
+                  style={[Typography.bodySmall, themed.textSecondary]}
                 >
                   No activity yet
                 </ThemedText>
@@ -333,12 +281,12 @@ export default function SettingsScreen() {
                     ]}
                   >
                     <View style={{ flex: 1, gap: 2 }}>
-                      <ThemedText style={{ fontSize: 14, fontWeight: "600" }}>
+                      <ThemedText style={Typography.semibold}>
                         {log.action}
                       </ThemedText>
                       <ThemedText
                         numberOfLines={1}
-                        style={{ fontSize: 12, color: colors.textSecondary }}
+                        style={[Typography.caption, themed.textSecondary]}
                       >
                         {log.detail}
                       </ThemedText>
@@ -356,17 +304,10 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <ThemedText
-            style={[styles.sectionTitle, { color: colors.textSecondary }]}
-          >
+          <ThemedText style={[styles.sectionTitle, themed.textSecondary]}>
             Danger Zone
           </ThemedText>
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
+          <View style={[styles.card, themed.cardContainer]}>
             <Pressable
               style={[styles.row, { opacity: categoryCount === 0 ? 0.4 : 1 }]}
               disabled={categoryCount === 0}
@@ -399,12 +340,10 @@ export default function SettingsScreen() {
               }}
             >
               <View style={styles.rowLabel}>
-                <ThemedText style={{ fontSize: 16, color: colors.destructive }}>
+                <ThemedText style={[Typography.body, themed.textDestructive]}>
                   Delete All Categories
                 </ThemedText>
-                <ThemedText
-                  style={{ fontSize: 12, color: colors.textSecondary }}
-                >
+                <ThemedText style={[Typography.caption, themed.textSecondary]}>
                   Remove every category and subcategory
                 </ThemedText>
               </View>
@@ -415,8 +354,7 @@ export default function SettingsScreen() {
                 styles.row,
                 {
                   opacity: linkCount === 0 ? 0.4 : 1,
-                  borderTopWidth: 1,
-                  borderTopColor: colors.border,
+                  ...themed.separator,
                 },
               ]}
               disabled={linkCount === 0}
@@ -447,12 +385,10 @@ export default function SettingsScreen() {
               }}
             >
               <View style={styles.rowLabel}>
-                <ThemedText style={{ fontSize: 16, color: colors.destructive }}>
+                <ThemedText style={[Typography.body, themed.textDestructive]}>
                   Delete All Links
                 </ThemedText>
-                <ThemedText
-                  style={{ fontSize: 12, color: colors.textSecondary }}
-                >
+                <ThemedText style={[Typography.caption, themed.textSecondary]}>
                   Remove every saved link
                 </ThemedText>
               </View>

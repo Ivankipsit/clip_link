@@ -1,7 +1,7 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Colors } from "@/constants/theme";
+import { Colors, Typography, createThemedStyles } from "@/constants/theme";
 import { useAppearance } from "@/context/appearance-context";
 import { useSync } from "@/context/sync-context";
 import {
@@ -54,6 +54,7 @@ export default function BrowseScreen() {
     setCategoryViewMode,
   } = useSync();
   const colors = Colors[resolvedTheme];
+  const themed = createThemedStyles(colors);
 
   // Data
   const [allCategories, setAllCategories] = useState<Category[]>([]);
@@ -444,14 +445,10 @@ export default function BrowseScreen() {
                 {cat.name}
               </ThemedText>
             </View>
-            <ThemedText
-              style={[styles.listItemMeta, { color: colors.textSecondary }]}
-            >
+            <ThemedText style={[styles.listItemMeta, themed.textSecondary]}>
               {linkCount} links{childCount > 0 ? ` · ${childCount} sub` : ""}
             </ThemedText>
-            <ThemedText
-              style={[styles.listItemType, { color: colors.textSecondary }]}
-            >
+            <ThemedText style={[styles.listItemType, themed.textSecondary]}>
               Folder
             </ThemedText>
           </View>
@@ -488,7 +485,7 @@ export default function BrowseScreen() {
               </ThemedText>
               <ThemedText
                 numberOfLines={1}
-                style={{ fontSize: 12, color: colors.accent }}
+                style={[Typography.caption, themed.textAccent]}
               >
                 {link.url}
               </ThemedText>
@@ -513,9 +510,7 @@ export default function BrowseScreen() {
                 <IconSymbol name="trash" size={18} color={colors.destructive} />
               </Pressable>
             </View>
-            <ThemedText
-              style={[styles.listItemType, { color: colors.textSecondary }]}
-            >
+            <ThemedText style={[styles.listItemType, themed.textSecondary]}>
               Link
             </ThemedText>
           </View>
@@ -554,18 +549,16 @@ export default function BrowseScreen() {
               </Pressable>
               <ThemedText
                 numberOfLines={1}
-                style={{
-                  color: colors.textSecondary,
-                  fontSize: 14,
-                  flexShrink: 1,
-                }}
+                style={[
+                  Typography.bodySmall,
+                  themed.textSecondary,
+                  { flexShrink: 1 },
+                ]}
               >
                 {breadcrumb.slice(0, -1).join(" > ")}
                 {breadcrumb.length > 1 ? " > " : ""}
               </ThemedText>
-              <ThemedText
-                style={{ color: colors.text, fontSize: 14, fontWeight: "600" }}
-              >
+              <ThemedText style={[Typography.semibold, { color: colors.text }]}>
                 {breadcrumb[breadcrumb.length - 1]}
               </ThemedText>
             </View>
@@ -587,9 +580,7 @@ export default function BrowseScreen() {
               size={14}
               color={colors.accent}
             />
-            <ThemedText
-              style={[styles.toolbarBtnText, { color: colors.accent }]}
-            >
+            <ThemedText style={[styles.toolbarBtnText, themed.textAccent]}>
               Sort
             </ThemedText>
           </Pressable>
@@ -608,9 +599,7 @@ export default function BrowseScreen() {
               size={14}
               color={colors.accent}
             />
-            <ThemedText
-              style={[styles.toolbarBtnText, { color: colors.accent }]}
-            >
+            <ThemedText style={[styles.toolbarBtnText, themed.textAccent]}>
               View
             </ThemedText>
           </Pressable>
@@ -636,11 +625,10 @@ export default function BrowseScreen() {
             ]}
           >
             <ThemedText
-              style={{
-                fontSize: 12,
-                fontWeight: "600",
-                color: filterMode === fm.value ? "#fff" : colors.text,
-              }}
+              style={[
+                Typography.label,
+                { color: filterMode === fm.value ? "#fff" : colors.text },
+              ]}
             >
               {fm.label}
             </ThemedText>
@@ -673,9 +661,9 @@ export default function BrowseScreen() {
                 size={16}
                 color={colors.text}
               />
-              <ThemedText style={{ fontSize: 14, flex: 1 }}>
-                {opt.label}
-              </ThemedText>
+              <ThemedText
+                style={[Typography.bodySmall, { flex: 1 }]}
+              ></ThemedText>
               {sortMode === opt.value && (
                 <IconSymbol name="checkmark" size={14} color={colors.accent} />
               )}
@@ -700,7 +688,7 @@ export default function BrowseScreen() {
             }}
           >
             <IconSymbol name="list.bullet" size={16} color={colors.text} />
-            <ThemedText style={{ fontSize: 14 }}>List</ThemedText>
+            <ThemedText style={Typography.bodySmall}>List</ThemedText>
             {categoryViewMode === "list" && (
               <IconSymbol name="checkmark" size={14} color={colors.accent} />
             )}
@@ -713,7 +701,7 @@ export default function BrowseScreen() {
             }}
           >
             <IconSymbol name="square.grid.2x2" size={16} color={colors.text} />
-            <ThemedText style={{ fontSize: 14 }}>Grid</ThemedText>
+            <ThemedText style={Typography.bodySmall}>Grid</ThemedText>
             {categoryViewMode === "grid" && (
               <IconSymbol name="checkmark" size={14} color={colors.accent} />
             )}
@@ -736,9 +724,7 @@ export default function BrowseScreen() {
             listData.length === 0 ? styles.emptyContainer : styles.gridList
           }
           ListEmptyComponent={
-            <ThemedText
-              style={{ color: colors.textSecondary, textAlign: "center" }}
-            >
+            <ThemedText style={[themed.textSecondary, Typography.textCenter]}>
               {filterMode === "links"
                 ? "No links here."
                 : filterMode === "folders"
@@ -765,9 +751,7 @@ export default function BrowseScreen() {
             listData.length === 0 ? styles.emptyContainer : styles.list
           }
           ListEmptyComponent={
-            <ThemedText
-              style={{ color: colors.textSecondary, textAlign: "center" }}
-            >
+            <ThemedText style={[themed.textSecondary, Typography.textCenter]}>
               {filterMode === "links"
                 ? "No links here."
                 : filterMode === "folders"
@@ -794,7 +778,7 @@ export default function BrowseScreen() {
             onPress={openAddLink}
           >
             <IconSymbol name="link" size={18} color={colors.accent} />
-            <ThemedText style={{ fontSize: 14 }}>Add Link</ThemedText>
+            <ThemedText style={Typography.bodySmall}>Add Link</ThemedText>
           </Pressable>
           <Pressable
             style={[
@@ -804,7 +788,7 @@ export default function BrowseScreen() {
             onPress={openAddCategory}
           >
             <IconSymbol name="folder.fill" size={18} color={colors.accent} />
-            <ThemedText style={{ fontSize: 14 }}>Add Folder</ThemedText>
+            <ThemedText style={Typography.bodySmall}>Add Folder</ThemedText>
           </Pressable>
         </View>
       )}
@@ -840,15 +824,7 @@ export default function BrowseScreen() {
               </Pressable>
             </View>
             <TextInput
-              style={[
-                styles.input,
-                {
-                  color: colors.text,
-                  borderColor: colors.border,
-                  backgroundColor: colors.surfaceSecondary,
-                },
-              ]}
-              placeholder="Folder name"
+              style={[styles.input, themed.inputBase]}
               placeholderTextColor={colors.placeholder}
               value={catInputValue}
               onChangeText={setCatInputValue}
@@ -858,9 +834,7 @@ export default function BrowseScreen() {
               style={[styles.saveBtn, { backgroundColor: colors.accent }]}
               onPress={handleSaveCategory}
             >
-              <ThemedText
-                style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}
-              >
+              <ThemedText style={[themed.textWhite, Typography.buttonText]}>
                 Save
               </ThemedText>
             </Pressable>
@@ -875,9 +849,7 @@ export default function BrowseScreen() {
                   handleDeleteCategory(catEditingId);
                 }}
               >
-                <ThemedText
-                  style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}
-                >
+                <ThemedText style={[themed.textWhite, Typography.buttonText]}>
                   Delete
                 </ThemedText>
               </Pressable>
@@ -904,15 +876,7 @@ export default function BrowseScreen() {
 
             <View style={styles.urlRow}>
               <TextInput
-                style={[
-                  styles.input,
-                  styles.urlInput,
-                  {
-                    color: colors.text,
-                    borderColor: colors.border,
-                    backgroundColor: colors.surfaceSecondary,
-                  },
-                ]}
+                style={[styles.input, styles.urlInput, themed.inputBase]}
                 placeholderTextColor={colors.placeholder}
                 placeholder="URL"
                 value={url}
@@ -929,14 +893,7 @@ export default function BrowseScreen() {
             {urlError && <ThemedText>{urlError}</ThemedText>}
 
             <TextInput
-              style={[
-                styles.input,
-                {
-                  color: colors.text,
-                  borderColor: colors.border,
-                  backgroundColor: colors.surfaceSecondary,
-                },
-              ]}
+              style={[styles.input, themed.inputBase]}
               placeholderTextColor={colors.placeholder}
               placeholder="Title"
               value={title}
@@ -956,12 +913,14 @@ export default function BrowseScreen() {
               ]}
             >
               <TextInput
-                style={{
-                  color: colors.text,
-                  fontSize: 15,
-                  flex: 1,
-                  paddingVertical: 0,
-                }}
+                style={[
+                  Typography.body,
+                  {
+                    color: colors.text,
+                    flex: 1,
+                    paddingVertical: 0,
+                  },
+                ]}
                 placeholderTextColor={colors.placeholder}
                 placeholder="Category (e.g. Tech > Frontend)"
                 value={categoryPath}
@@ -1020,7 +979,7 @@ export default function BrowseScreen() {
                           color={colors.accent}
                         />
                         <ThemedText
-                          style={{ fontSize: 14, color: colors.accent }}
+                          style={[Typography.bodySmall, themed.textAccent]}
                         >
                           Back
                         </ThemedText>
@@ -1045,7 +1004,9 @@ export default function BrowseScreen() {
                           size={14}
                           color={colors.accent}
                         />
-                        <ThemedText style={{ fontSize: 14, fontWeight: "600" }}>
+                        <ThemedText
+                          style={[Typography.bodySmall, Typography.semibold]}
+                        >
                           Select &ldquo;
                           {allCategories.find((c) => c.id === tp)?.name}
                           &rdquo;
@@ -1083,9 +1044,9 @@ export default function BrowseScreen() {
                               size={16}
                               color={colors.accent}
                             />
-                            <ThemedText style={{ fontSize: 14, flex: 1 }}>
-                              {cat.name}
-                            </ThemedText>
+                            <ThemedText
+                              style={[Typography.bodySmall, { flex: 1 }]}
+                            ></ThemedText>
                             {hasKids && (
                               <IconSymbol
                                 name="chevron.right"
@@ -1104,10 +1065,10 @@ export default function BrowseScreen() {
                           ]}
                         >
                           <ThemedText
-                            style={{
-                              fontSize: 13,
-                              color: colors.textSecondary,
-                            }}
+                            style={[
+                              Typography.captionMedium,
+                              themed.textSecondary,
+                            ]}
                           >
                             No subcategories
                           </ThemedText>
@@ -1130,7 +1091,7 @@ export default function BrowseScreen() {
               onPress={handleSaveLink}
               disabled={!isValidUrl(url)}
             >
-              <ThemedText style={{ color: "#fff" }}>Save</ThemedText>
+              <ThemedText style={themed.textWhite}>Save</ThemedText>
             </Pressable>
           </View>
         </View>
